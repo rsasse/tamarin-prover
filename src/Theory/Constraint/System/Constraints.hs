@@ -17,6 +17,7 @@ module Theory.Constraint.System.Constraints (
   , NodeConc
   , Edge(..)
   , Less
+  , Distinction
 
   -- * Goal constraints
   , Goal(..)
@@ -72,6 +73,12 @@ data Edge = Edge {
 
 -- | A *⋖* constraint between 'NodeId's.
 type Less = (NodeId, NodeId)
+
+
+-- | A *distinct([i_1,...,i_k])* constraint stating that the listed temporal
+-- variables are pairwise different.
+type Distinction = [NodeId]
+
 
 -- Instances
 ------------

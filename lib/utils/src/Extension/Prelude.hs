@@ -38,7 +38,7 @@ singleton x = [x]
 -- | check whether the given list contains no duplicates
 {-# INLINABLE unique #-}
 unique :: Eq a => [a] -> Bool
-unique [] = True
+unique []     = True
 unique (x:xs) = x `notElem` xs && unique xs
 
 -- | Sort list and remove duplicates. O(n*log n)

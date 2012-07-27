@@ -466,6 +466,7 @@ substSystem = do
     substEdges
     substLastAtom
     substLessAtoms
+    substDistinctions
     substFormulas
     substSolvedFormulas
     substLemmas
@@ -474,12 +475,13 @@ substSystem = do
     return (c1 <> c2)
 
 -- no invariants to maintain here
-substEdges, substLessAtoms, substLastAtom, substFormulas,
+substEdges, substLessAtoms, substLastAtom, substDistinctions, substFormulas,
   substSolvedFormulas, substLemmas, substNextGoalNr :: Reduction ()
 
 substEdges          = substPart sEdges
 substLessAtoms      = substPart sLessAtoms
 substLastAtom       = substPart sLastAtom
+substDistinctions   = substPart sDistinctions
 substFormulas       = substPart sFormulas
 substSolvedFormulas = substPart sSolvedFormulas
 substLemmas         = substPart sLemmas
@@ -556,6 +558,7 @@ conjoinSystem sys = do
     joinSets sSolvedFormulas
     joinSets sLemmas
     joinSets sEdges
+    joinSets sDistinctions
     F.mapM_ insertLast                 $ get sLastAtom    sys
     F.mapM_ (uncurry insertLess)       $ get sLessAtoms   sys
     mapM_   (uncurry insertGoalStatus) $ M.toList $ get sGoals sys

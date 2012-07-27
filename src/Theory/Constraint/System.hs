@@ -64,6 +64,7 @@ module Theory.Constraint.System (
 
   -- ** Equations
   , module Theory.Tools.EquationStore
+  , sDistinctions
   , sEqStore
   , sSubst
   , sConjDisjEqs
@@ -161,6 +162,7 @@ data System = System
     , _sLessAtoms      :: S.Set (NodeId, NodeId)
     , _sLastAtom       :: Maybe NodeId
     , _sEqStore        :: EqStore
+    , _sDistinctions   :: S.Set Distinction     -- groups of distinct variables
     , _sFormulas       :: S.Set LNGuarded
     , _sSolvedFormulas :: S.Set LNGuarded
     , _sLemmas         :: S.Set LNGuarded
@@ -168,7 +170,7 @@ data System = System
     , _sNextGoalNr     :: Integer
     , _sCaseDistKind   :: CaseDistKind
     }
-    -- NOTE: Don't forget the update 'substSystem' in
+    -- NOTE: Don't forget to update 'substSystem' and 'conjoinSystem' in
     -- "Constraint.Solver.Reduction" when adding further fields to the
     -- constraint system.
     deriving( Eq, Ord )
@@ -197,7 +199,7 @@ sConjDisjEqs = eqsConj . sEqStore
 -- | The empty constraint system, which is logically equivalent to true.
 emptySystem :: CaseDistKind -> System
 emptySystem = System
-    M.empty S.empty S.empty Nothing emptyEqStore
+    M.empty S.empty S.empty Nothing emptyEqStore S.empty
     S.empty S.empty S.empty
     M.empty 0
 
@@ -392,13 +394,15 @@ prettyNonGraphSystem se = vsep $ map combine
   [ ("last",            maybe (text "none") prettyNodeId $ L.get sLastAtom se)
   , ("formulas",        vsep $ map prettyGuarded $ S.toList $ L.get sFormulas se)
   , ("equations",       prettyEqStore $ L.get sEqStore se)
+  , ("distinct vars",   numbered' $ map (fsepList prettyNodeId) $ S.toList $ L.get sDistinctions se)
   , ("lemmas",          vsep $ map prettyGuarded $ S.toList $ L.get sLemmas se)
   , ("allowed cases",   text $ show $ L.get sCaseDistKind se)
   , ("solved formulas", vsep $ map prettyGuarded $ S.toList $ L.get sSolvedFormulas se)
   , ("solved goals",    prettyGoals True se)
   ]
   where
-    combine (header, d)  = fsep [keyword_ header <> colon, nest 2 d]
+    combine (header, d) =
+        caseEmptyDoc emptyDoc (fsep [keyword_ header <> colon, nest 2 d]) d
 
 -- | Pretty print solved or unsolved goals.
 prettyGoals :: HighlightDocument d => Bool -> System -> d
@@ -428,7 +432,7 @@ instance HasFrees GoalStatus where
     mapFrees  = const pure
 
 instance HasFrees System where
-    foldFrees fun (System a b c d e f g h i j k) =
+    foldFrees fun (System a b c d e f g h i j k l) =
         foldFrees fun a `mappend`
         foldFrees fun b `mappend`
         foldFrees fun c `mappend`
@@ -439,9 +443,10 @@ instance HasFrees System where
         foldFrees fun h `mappend`
         foldFrees fun i `mappend`
         foldFrees fun j `mappend`
-        foldFrees fun k
+        foldFrees fun k `mappend`
+        foldFrees fun l
 
-    mapFrees fun (System a b c d e f g h i j k) =
+    mapFrees fun (System a b c d e f g h i j k l) =
         System <$> mapFrees fun a
                <*> mapFrees fun b
                <*> mapFrees fun c
@@ -453,6 +458,7 @@ instance HasFrees System where
                <*> mapFrees fun i
                <*> mapFrees fun j
                <*> mapFrees fun k
+               <*> mapFrees fun l
 
 
 $( derive makeBinary ''CaseDistKind)

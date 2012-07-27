@@ -13,6 +13,7 @@ module Theory.Text.Pretty (
   -- * Additional combinators
   , vsep
   , fsepList
+  , fsepSet
 
   -- * Comments
   , lineComment
@@ -50,7 +51,9 @@ module Theory.Text.Pretty (
 
   ) where
 
-import Text.PrettyPrint.Highlight
+import qualified Data.Set                   as S
+
+import           Text.PrettyPrint.Highlight
 
 
 ------------------------------------------------------------------------------
@@ -65,6 +68,11 @@ vsep = foldr ($--$) emptyDoc
 -- paragraph mode.
 fsepList :: Document d => (a -> d) -> [a] -> d
 fsepList pp = fsep . punctuate comma . map pp
+
+-- | Pretty print a set of values as a comma-separated list wrapped in
+-- paragraph mode.
+fsepSet :: Document d => (a -> d) -> S.Set a -> d
+fsepSet pp = fsep . punctuate comma . map pp . S.toList
 
 
 ------------------------------------------------------------------------------
