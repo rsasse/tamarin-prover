@@ -67,7 +67,7 @@ unsolvedChainConstraints =
 -- given typing assumptions are justified.
 initialCaseDistinction
     :: ProofContext
-    -> [LNFormula] -- ^ Axioms.
+    -> [LNGuarded] -- ^ Axioms.
     -> Goal
     -> CaseDistinction
 initialCaseDistinction ctxt axioms goal =
@@ -111,9 +111,8 @@ solveAllSafeGoals :: [CaseDistinction] -> Reduction [String]
 solveAllSafeGoals ths =
     solve []
   where
-    -- safeGoal _ _ = False
-    safeGoal _       (_,   (_, Useless)) = False
-    safeGoal doSplit (goal, _          ) =
+    safeGoal _       (_,   (_, LoopBreaker)) = False
+    safeGoal doSplit (goal, _              ) =
       case goal of
         ChainG _ _    -> True
         ActionG _ fa  -> not (isKUFact fa)
@@ -158,9 +157,13 @@ matchToGoal
     :: ProofContext     -- ^ Proof context used for refining the case distinction.
     -> CaseDistinction  -- ^ Case distinction to use.
     -> Goal             -- ^ Goal to match
-    -> Maybe CaseDistinction
-    -- ^ An adapted version of the case distinction and a matcher of the case
-    -- distinction goal to the substitution goal.
+    -> Maybe (Reduction [String])
+    -- ^ A constraint reduction step to apply the resulting case distinction.
+    -- Note that this step assumes that the theorem has been imported using
+    -- 'someInst' into the context that this reduction is executed in.
+    --
+    -- FIXME: This is a mess. Factor code such that this inter-dependency
+    -- between 'applyCaseDistinction' and 'matchToGoal' goes away.
 matchToGoal ctxt th goalTerm =
   case (goalTerm, get cdGoal th) of
     ( PremiseG      (iTerm, premIdxTerm) faTerm
@@ -168,27 +171,26 @@ matchToGoal ctxt th goalTerm =
         let match = faTerm `matchFact` faPat <> iTerm `matchLVar` iPat in
         case runReader (solveMatchLNTerm match) (get pcMaudeHandle ctxt) of
             []      -> Nothing
-            subst:_ ->
-                let refine = do
-                        modM sEdges (substNodePrem pPat (iPat, premIdxTerm))
-                        void (solveSubstEqs SplitNow subst)
-                        return ((), [])
-                in Just $ snd $ refineCaseDistinction ctxt refine th
+            subst:_ -> Just $ genericApply subst $
+                -- add the missing edge to each case of the theorem
+                modify sEdges (substNodePrem pPat (iPat, premIdxTerm))
 
     (ActionG iTerm faTerm, ActionG iPat faPat) ->
         let match = faTerm `matchFact` faPat <> iTerm `matchLVar` iPat in
         case runReader (solveMatchLNTerm match) (get pcMaudeHandle ctxt) of
             []      -> Nothing
-            subst:_ ->
-                let refine = do
-                        void (solveSubstEqs SplitNow subst)
-                        return ((), [])
-                in Just $ snd $ refineCaseDistinction ctxt refine th
+            subst:_ -> Just $ genericApply subst id
 
     -- No other matches possible, as we only precompute case distinctions for
     -- premises and KU-actions.
     _ -> Nothing
   where
+    genericApply subst systemModifier = do
+        void (solveSubstEqs SplitNow subst)
+        (names, sysTh) <- disjunctionOfList $ getDisj $ get cdCases th
+        conjoinSystem (systemModifier sysTh)
+        return names
+
     substNodePrem from to = S.map
         (\ e@(Edge c p) -> if p == from then Edge c to else e)
 
@@ -211,11 +213,8 @@ applyCaseDistinction ctxt th goal
   | isJust $ matchToGoal ctxt th goal = Just $ do
         markGoalAsSolved "precomputed" goal
         thRenamed <- rename th
-        let thInst = fromJustNote "applyCaseDistinction: impossible" $
-                         matchToGoal ctxt thRenamed goal
-        (names, sysTh) <- disjunctionOfList $ getDisj $ get cdCases thInst
-        conjoinSystem sysTh
-        return names
+        fromJustNote "applyCaseDistinction: impossible" $
+            matchToGoal ctxt thRenamed goal
 
   | otherwise = Nothing
 
@@ -240,7 +239,7 @@ saturateCaseDistinctions ctxt =
 -- | Precompute a saturated set of case distinctions.
 precomputeCaseDistinctions
     :: ProofContext
-    -> [LNFormula]       -- ^ Axioms.
+    -> [LNGuarded]       -- ^ Axioms.
     -> [CaseDistinction]
 precomputeCaseDistinctions ctxt axioms =
     map cleanupCaseNames $ saturateCaseDistinctions ctxt rawCaseDists
@@ -294,17 +293,15 @@ precomputeCaseDistinctions ctxt axioms =
 -- | Refine a set of case distinction by exploiting additional typing
 -- assumptions.
 refineWithTypingAsms
-    :: [LNFormula]        -- ^ Typing assumptions to use.
+    :: [LNGuarded]        -- ^ Typing assumptions to use.
     -> ProofContext       -- ^ Proof context to use.
     -> [CaseDistinction]  -- ^ Original, untyped case distinctions.
     -> [CaseDistinction]  -- ^ Refined, typed case distinctions.
-refineWithTypingAsms assumptions0 ctxt cases0 =
+refineWithTypingAsms assumptions ctxt cases0 =
     fmap (modifySystems removeFormulas) $
     saturateCaseDistinctions ctxt $
     modifySystems updateSystem <$> cases0
   where
-    assumptions =
-        map (either (error . render) id . formulaToGuarded) assumptions0
     modifySystems   = modify cdCases . fmap . second
     updateSystem se =
         modify sFormulas (S.union (S.fromList assumptions)) $
