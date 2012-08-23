@@ -38,7 +38,9 @@ library
       , bytestring        >= 0.9   && < 0.11
       , transformers      >= 0.2
       , containers        >= 0.4.2
-      , fclabels          >= 1.1
+        -- 1.1.4.1 is the first version working with GHC 7.6
+      , fclabels          >= 1.1.4.1
+      , template-haskell  == 2.6.*
       , blaze-builder     >= 0.3
       , base64-bytestring >= 1.0
       , SHA               >= 1.5
