@@ -1,0 +1,21 @@
+rule Register_pk:
+  let pubk = pk(~ltk)
+  in
+  [ Fr(~ltk) ] 
+  --> 
+  [ !Ltk($A, ~ltk), !Pk($A, pubk), Out(pubk) ]
+
+// Protocol
+rule Init_1:
+  [ Fr(~ekI), !Ltk($I, ltkI) ]
+  -->
+  [ Init_1( $I, $R, ~ekI )
+  , Out( <$I, $R, 'g' ^ ~ekI, sign{'1', $I, $R,'g' ^ ~ekI }ltkI> ) ]
+
+rule Init_2:
+    [ Init_1( $I, $R, ~ekI )
+    , !Pk($R, pk(ltkR))
+    , In( <$R, $I, Y, sign{'2', $R, $I, Y }ltkR> ) 
+    ]
+  --[ SessionKey($I,$R, Y ^ ~ekI) ]->
+    []

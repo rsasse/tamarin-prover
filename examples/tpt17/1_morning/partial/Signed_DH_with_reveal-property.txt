@@ -1,0 +1,30 @@
+lemma Key_Secret:
+  "All I R sessKey #i. 
+     SessionKey(I,R,sessKey) @ #i 
+     ==> not (Ex #j. K(sessKey) @ #j)"
+
+
+lemma Key_Secret_no_reveal:
+  "All I R sessKey #i. 
+     SessionKey(I,R,sessKey) @ #i 
+     ==> not (Ex #j. K(sessKey) @ #j)
+       |
+         ( (Ex #r. LtkReveal(I) @ r)
+         | (Ex #r. LtkReveal(R) @ r)
+         )
+"
+
+//PROOF
+lemma Key_Secret_PFS:
+  "All I R sessKey #i. 
+     SessionKey(I,R,sessKey) @ #i 
+     ==> not (Ex #j. K(sessKey) @ #j)
+       |
+         ( (Ex #r. LtkReveal(I) @ r & r < i)
+         | (Ex #r. LtkReveal(R) @ r & r < i)
+         )
+"
+
+lemma executable:
+  exists-trace
+  "Ex I R sessKey #i #j. SessionKey(I,R,sessKey)@ #i & SessionKey(I,R,sessKey)@ #j & not (#i = #j)"

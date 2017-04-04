@@ -1,0 +1,12 @@
+
+rule Resp:
+    [ !Pk($I, pk(ltkI))
+    , !Ltk($R, ltkR)
+    , Fr(~ekR)
+    , In( <$I, $R, X, sign{'1', $I, $R, X }ltkI> ) 
+    ]
+  --[ SessionKey($I,$R, X ^ ~ekR) ]->
+    [
+      Out( <$R, $I, 'g' ^ ~ekR, sign{'2', $R, $I, 'g' ^ ~ekR }ltkR> ) 
+    ]
+

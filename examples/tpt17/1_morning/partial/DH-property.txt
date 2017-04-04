@@ -1,0 +1,8 @@
+lemma Key_Secret:
+  "All I R sessKey #i. 
+     SessionKey(I,R,sessKey) @ #i 
+     ==> not (Ex #j. K(sessKey) @ #j)"
+
+lemma executable:
+  exists-trace
+  "Ex I R sessKey #i #j. SessionKey(I,R,sessKey)@ #i & SessionKey(I,R,sessKey)@ #j & not (#i = #j)"
