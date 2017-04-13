@@ -12,21 +12,21 @@ rule Register_pk:
 
 /* We formalize the following protocol
   protocol {
-    1. I -> R: {'1',ni,I}pk(R)
-    2. I <- R: {'2',ni}pk(I)
+    1. I -> R: {ni,I}pk(R)
+    2. I <- R: {ni}pk(I)
   }
 */
 
 rule I_1:
-  let m1 = aenc{'1', ~ni, $I}pkR
+  let m1 = aenc{~ni, $I}pkR
   in
     [ Fr(~ni) , !Pk($R, pkR) ]
   --[ OUT_I_1(m1) ]->
     [ Out( m1 ) ]
 
 rule R_1:
-  let m1 = aenc{'1', ni, I}pk(ltkR)
-      m2 = aenc{'2', ni}pkI
+  let m1 = aenc{ni, I}pk(ltkR)
+      m2 = aenc{ni}pkI
   in
     [ !Ltk($R, ltkR) , In( m1 ), !Pk(I, pkI) ]
   --[ IN_R_1_ni( ni, m1 ) ]->
