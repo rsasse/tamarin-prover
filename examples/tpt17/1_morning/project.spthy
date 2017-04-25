@@ -12,6 +12,7 @@ protocol DH {
   }
 */
 
+builtins: diffie-hellman
 
 /* Initiator Rules */
 
