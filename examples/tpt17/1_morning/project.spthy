@@ -1,0 +1,24 @@
+theory project
+begin
+
+/* In this hands-on session, we ask you to first model and analyze the
+naive Diffie-Hellman exchange between two parties. Then, use an
+authenticated version of the DH exchange using signatures with a
+long-term public key infrastructure.
+
+protocol DH {
+  1. I -> R: g^x
+  2. R -> I: g^y
+  }
+*/
+
+
+/* Initiator Rules */
+
+
+/* Responder Rule */
+
+
+/* Property Lemma: key secrecy */
+
+end
