@@ -20,7 +20,7 @@ rule I_2:
     , !Pk(R, pkR)
     ]
   --[ IN_I_2_nr( nr, m2)
-    , Commit (I, R, <'init',ni,nr>)  // need to log identities explicitely to
+    , Commit (I, R, <'init',ni,nr>)  // need to log identities explicitly to
     , Running(R, I, <'resp',ni,nr>)  // specify that they must not be
                                      // compromised in the property.
     ]->
