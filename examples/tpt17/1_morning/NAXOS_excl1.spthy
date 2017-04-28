@@ -1,4 +1,4 @@
-theory NAXOS_eCK
+theory NAXOS_eCK_excl1
 begin
 
 builtins: diffie-hellman
