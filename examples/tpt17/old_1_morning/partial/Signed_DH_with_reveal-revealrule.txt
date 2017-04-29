@@ -1,4 +1,0 @@
-rule Reveal_ltk:
-    [ !Ltk(A, ltk) ]
-  --[ LtkReveal(A) ]->
-    [ Out(ltk) ]
