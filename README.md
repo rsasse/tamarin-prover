@@ -82,6 +82,7 @@ ake/           more AKE examples including ID-based and tripartite group KE
                protocols based on bilinear pairing
 features/      (small) models that demonstrate a given feature
 ccs15/	       the observational equivalence case studies from our CCS'15 paper
+post17/	       the case studies from our POST'17 paper
 ~~~~
 
 Feel free to add more sub-directories and describe them here.
