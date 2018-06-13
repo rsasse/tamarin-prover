@@ -335,7 +335,7 @@ execDiffProofMethod ctxt method sys = -- error $ show ctxt ++ show method ++ sho
 data GoalRanking =
     GoalNrRanking
   | OracleRanking String
-  | OracleSmartRanking String
+  | OracleSmartRanking String Bool
   | SapicRanking
   | SapicLivenessRanking
   | SapicPKCS11Ranking
@@ -349,16 +349,16 @@ data GoalRanking =
 goalRankingName :: GoalRanking -> String
 goalRankingName ranking =
     "Goals sorted according to " ++ case ranking of
-        GoalNrRanking                 -> "their order of creation"
-        OracleRanking oracleName      -> "an oracle for ranking, located at: " ++ oracleName
-        OracleSmartRanking oracleName -> "an oracle for ranking based on 'smart' heuristic, located at: " ++ oracleName
-        UsefulGoalNrRanking           -> "their usefulness and order of creation"
-        SapicRanking                  -> "heuristics adapted to the output of the SAPIC tool"
-        SapicLivenessRanking          -> "heuristics adapted to the output of the SAPIC tool for liveness properties"
-        SapicPKCS11Ranking            -> "heuristics adapted to a model of PKCS#11 translated using the SAPIC tool"
-        SmartRanking useLoopBreakers  -> "the 'smart' heuristic" ++ loopStatus useLoopBreakers
-        SmartDiffRanking              -> "the 'smart' heuristic (for diff proofs)"
-        InjRanking useLoopBreakers    -> "heuristics adapted to stateful injective protocols" ++ loopStatus useLoopBreakers
+        GoalNrRanking                                 -> "their order of creation"
+        OracleRanking oracleName                      -> "an oracle for ranking, located at: " ++ oracleName
+        OracleSmartRanking oracleName useLoopBreakers -> "an oracle for ranking based on 'smart' heuristic, located at: " ++ oracleName ++ loopStatus useLoopBreakers
+        UsefulGoalNrRanking                           -> "their usefulness and order of creation"
+        SapicRanking                                  -> "heuristics adapted to the output of the SAPIC tool"
+        SapicLivenessRanking                          -> "heuristics adapted to the output of the SAPIC tool for liveness properties"
+        SapicPKCS11Ranking                            -> "heuristics adapted to a model of PKCS#11 translated using the SAPIC tool"
+        SmartRanking useLoopBreakers                  -> "the 'smart' heuristic" ++ loopStatus useLoopBreakers
+        SmartDiffRanking                              -> "the 'smart' heuristic (for diff proofs)"
+        InjRanking useLoopBreakers                    -> "heuristics adapted to stateful injective protocols" ++ loopStatus useLoopBreakers
    where
      loopStatus b = " (loop breakers " ++ (if b then "allowed" else "delayed") ++ ")"
 
@@ -368,7 +368,7 @@ rankGoals :: ProofContext -> GoalRanking -> System -> [AnnotatedGoal] -> [Annota
 rankGoals ctxt ranking = case ranking of
     GoalNrRanking       -> \_sys -> goalNrRanking
     OracleRanking oracleName -> oracleRanking oracleName ctxt
-    OracleSmartRanking oracleName -> oracleSmartRanking oracleName ctxt
+    OracleSmartRanking oracleName useLoopBreakers -> oracleSmartRanking oracleName ctxt useLoopBreakers
     UsefulGoalNrRanking ->
         \_sys -> sortOn (\(_, (nr, useless)) -> (useless, nr))
     SapicRanking -> sapicRanking ctxt
@@ -520,13 +520,14 @@ oracleRanking oracleName ctxt _sys ags0
 --   as the baseline.
 oracleSmartRanking :: String
                    -> ProofContext
+                   -> Bool
                    -> System
                    -> [AnnotatedGoal] -> [AnnotatedGoal]
-oracleSmartRanking oracleName ctxt _sys ags0
+oracleSmartRanking oracleName ctxt useLoopBreakers _sys ags0
 --  | AvoidInduction == (L.get pcUseInduction ctxt) = ags0
   | otherwise =
     unsafePerformIO $ do
-      let ags = smartRanking ctxt False _sys ags0
+      let ags = smartRanking ctxt useLoopBreakers _sys ags0
       let inp = unlines
                   (map (\(i,ag) -> show i ++": "++ (concat . lines . render $ pgoal ag))
                        (zip [(0::Int)..] ags))

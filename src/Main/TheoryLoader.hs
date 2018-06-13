@@ -89,7 +89,7 @@ theoryLoadFlags =
   , flagOpt "5" ["bound", "b"] (updateArg "bound") "INT"
       "Bound the depth of the proofs"
 
-  , flagOpt "s" ["heuristic"] (updateArg "heuristic") "(s|S|o|O|p|P|l|c|C|i|I)+"
+  , flagOpt "s" ["heuristic"] (updateArg "heuristic") "(s|S|o|O|B|p|P|l|c|C|i|I)+"
       "Sequence of goal rankings to use (default 's')"
 
   , flagOpt "summary" ["partial-evaluation"] (updateArg "partialEvaluation")
@@ -346,7 +346,8 @@ constructAutoProver as =
     ranking 's' = SmartRanking False
     ranking 'S' = SmartRanking True
     ranking 'o' = OracleRanking oracleName
-    ranking 'O' = OracleSmartRanking oracleName
+    ranking 'O' = OracleSmartRanking oracleName False
+    ranking 'B' = OracleSmartRanking oracleName True
     ranking 'p' = SapicRanking
     ranking 'l' = SapicLivenessRanking
     ranking 'P' = SapicPKCS11Ranking
@@ -360,6 +361,7 @@ constructAutoProver as =
       \ 'S' for the smart ranking with loop breakers,\
       \ 'o' for oracle ranking,\
       \ 'O' for oracle ranking with smart ranking without loop breakers as underlying baseline,\
+      \ 'B' for oracle ranking with smart ranking with loop breakers as underlying baseline,\
       \ 'p' for the smart ranking optimized for translations coming from SAPIC (http://sapic.gforge.inria.fr),\
       \ 'l' for the smart ranking optimized for translations coming from SAPIC proving liveness properties,\
       \ 'P' for the smart ranking optimized for a specific model of PKCS11, translated using SAPIC,\
@@ -400,7 +402,8 @@ constructAutoDiffProver as =
     ranking 's' = SmartRanking False
     ranking 'S' = SmartRanking True
     ranking 'o' = OracleRanking oracleName
-    ranking 'O' = OracleSmartRanking oracleName
+    ranking 'O' = OracleSmartRanking oracleName False
+    ranking 'B' = OracleSmartRanking oracleName True
     ranking 'c' = UsefulGoalNrRanking
     ranking 'C' = GoalNrRanking
     ranking r   = error $ render $ fsep $ map text $ words $
@@ -408,6 +411,8 @@ constructAutoDiffProver as =
       \ 's' for the smart ranking without loop breakers,\
       \ 'S' for the smart ranking with loop breakers,\
       \ 'o' for oracle ranking,\
+      \ 'O' for oracle ranking with smart ranking without loop breakers as underlying baseline,\
+      \ 'B' for oracle ranking with smart ranking with loop breakers as underlying baseline,\
       \ 'c' for the creation order and useful goals first,\
       \ and 'C' for the creation order."
 
